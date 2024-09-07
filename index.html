@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Learning Game</title>
+  <style>
+    body { 
+      font-family: 'Arial', sans-serif; 
+      text-align: center; 
+      margin: 0; 
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      transition: background-color 0.5s ease;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 20px;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    #color-grid { 
+      display: flex; 
+      justify-content: center; 
+      width: 90%; 
+      margin: auto; 
+    }
+
+    .color-box { 
+      flex: 1; 
+      margin: 10px; 
+      height: 150px; 
+      border-radius: 10px; 
+      transition: transform 0.5s ease, box-shadow 0.5s ease, background-color 0.5s ease;
+      opacity: 1;
+    }
+
+    .highlight { 
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); 
+      transform: scale(1.1); 
+    }
+
+    .red { background-color: red; }
+    .green { background-color: green; }
+    .blue { background-color: blue; }
+    .yellow { background-color: yellow; }
+
+    /* Landscape responsiveness */
+    @media screen and (min-width: 768px) {
+      h1 {
+        font-size: 4em;
+      }
+      .color-box {
+        height: 200px;
+      }
+    }
+
+    /* Fade effect for transitions */
+    .fade-out {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .fade-in {
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1 id="question">Which Color is Red?</h1>
+<div id="color-grid">
+  <div class="color-box red" id="red"></div>
+  <div class="color-box green" id="green"></div>
+  <div class="color-box blue" id="blue"></div>
+  <div class="color-box yellow" id="yellow"></div>
+</div>
+
+<!-- Audio Elements -->
+<audio id="correct" src="correct.mp3"></audio>
+<audio id="incorrect" src="incorrect.mp3"></audio>
+
+<script>
+  let selectedIndex = 0;
+  const colorBoxes = document.querySelectorAll('.color-box');
+  const correctAudio = document.getElementById('correct');
+  const incorrectAudio = document.getElementById('incorrect');
+  const questionElement = document.getElementById('question');
+
+  const questions = [
+    { question: "Which color is red?", answer: "red" },
+    { question: "Which color is green?", answer: "green" },
+    { question: "Which color is blue?", answer: "blue" },
+    { question: "Which color is yellow?", answer: "yellow" }
+  ];
+
+  let currentQuestion = 0;
+
+  function updateSelection() {
+    colorBoxes.forEach(box => box.classList.remove('highlight'));
+    colorBoxes[selectedIndex].classList.add('highlight');
+  }
+
+  function handleSelection() {
+    const selectedColor = colorBoxes[selectedIndex].id;
+    const correctColor = questions[currentQuestion].answer;
+
+    if (selectedColor === correctColor) {
+      correctAudio.play();
+      showCorrectAnswerTransition();
+    } else {
+      incorrectAudio.play();
+      alert('Incorrect! Try again.');
+    }
+  }
+
+  function showCorrectAnswerTransition() {
+    // Animate the correct color and fade to the next question
+    questionElement.classList.add('fade-out');
+    colorBoxes[selectedIndex].classList.add('highlight');
+    setTimeout(() => {
+      questionElement.classList.remove('fade-out');
+      nextQuestion();
+    }, 1000);
+  }
+
+  function nextQuestion() {
+    // Move to the next question and fade it in
+    currentQuestion = (currentQuestion + 1) % questions.length;
+    questionElement.textContent = questions[currentQuestion].question;
+    questionElement.classList.add('fade-in');
+    setTimeout(() => questionElement.classList.remove('fade-in'), 500);
+  }
+
+  document.addEventListener('keydown', function(event) {
+    switch(event.code) {
+      case 'F8': // Left
+        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : colorBoxes.length - 1;
+        updateSelection();
+        break;
+      case 'F11': // Right
+        selectedIndex = (selectedIndex < colorBoxes.length - 1) ? selectedIndex + 1 : 0;
+        updateSelection();
+        break;
+      case 'F1': // Select (A button)
+        handleSelection();
+        break;
+    }
+  });
+
+  // Initialize with the first box highlighted
+  updateSelection();
+</script>
+
+</body>
+</html>
