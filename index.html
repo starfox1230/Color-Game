@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,18 +11,19 @@
       text-align: center; 
       margin: 0; 
       padding: 0;
-      display: flex;
+      display: flex; 
       flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #f0f0f0;
+      background-color: #333; /* Charcoal background */
       transition: background-color 0.5s ease;
     }
 
     h1 {
       font-size: 3em;
       margin-bottom: 20px;
+      color: white; /* White text for night mode */
       opacity: 1;
       transition: opacity 0.5s ease;
     }
@@ -40,17 +42,33 @@
       border-radius: 10px; 
       transition: transform 0.5s ease, box-shadow 0.5s ease, background-color 0.5s ease;
       opacity: 1;
+      cursor: pointer;
     }
 
     .highlight { 
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); 
-      transform: scale(1.1); 
+      box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0.8);  /* Fuzzy white glow */
+      transform: scale(1.1);
+    }
+
+    .correct { 
+      transform: scale(1.3); 
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.8); 
+      transition: transform 0.7s ease, box-shadow 0.7s ease;
+    }
+
+    /* Animation for wrong selection: red outline and shaking */
+    .wrong {
+      animation: shake 0.5s ease;
+      border: 5px solid red;
+      transform: scale(1.1);
     }
 
     .red { background-color: red; }
+    .orange { background-color: orange; }
+    .yellow { background-color: yellow; }
     .green { background-color: green; }
     .blue { background-color: blue; }
-    .yellow { background-color: yellow; }
+    .purple { background-color: purple; }
 
     /* Landscape responsiveness */
     @media screen and (min-width: 768px) {
@@ -60,6 +78,13 @@
       .color-box {
         height: 200px;
       }
+    }
+
+    /* Shake animation for wrong answer */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
     }
 
     /* Fade effect for transitions */
@@ -73,75 +98,120 @@
       transition: opacity 0.5s ease;
     }
 
+    /* Disable pointer events when feedback is showing */
+    .disabled {
+      pointer-events: none;
+    }
+
   </style>
 </head>
 <body>
 
-<h1 id="question">Which Color is Red?</h1>
+<h1 id="question">Which color is?</h1>
 <div id="color-grid">
   <div class="color-box red" id="red"></div>
+  <div class="color-box orange" id="orange"></div>
+  <div class="color-box yellow" id="yellow"></div>
   <div class="color-box green" id="green"></div>
   <div class="color-box blue" id="blue"></div>
-  <div class="color-box yellow" id="yellow"></div>
+  <div class="color-box purple" id="purple"></div>
 </div>
 
 <!-- Audio Elements -->
-<audio id="correct" src="correct.mp3"></audio>
-<audio id="incorrect" src="incorrect.mp3"></audio>
+<audio id="question-sound" src=""></audio> <!-- Placeholder for question audio -->
+<audio id="response-sound" src=""></audio> <!-- Placeholder for correct/incorrect response audio -->
 
 <script>
   let selectedIndex = 0;
   const colorBoxes = document.querySelectorAll('.color-box');
-  const correctAudio = document.getElementById('correct');
-  const incorrectAudio = document.getElementById('incorrect');
+  const questionAudio = document.getElementById('question-sound');
+  const responseAudio = document.getElementById('response-sound');
   const questionElement = document.getElementById('question');
+  const gridElement = document.getElementById('color-grid');
 
   const questions = [
-    { question: "Which color is red?", answer: "red" },
-    { question: "Which color is green?", answer: "green" },
-    { question: "Which color is blue?", answer: "blue" },
-    { question: "Which color is yellow?", answer: "yellow" }
+    { question: "Which color is red?", answer: "red", questionAudio: "question_red.mp3", correctAudio: "correct_red.mp3", incorrectAudio: "wrong_red.mp3" },
+    { question: "Which color is orange?", answer: "orange", questionAudio: "question_orange.mp3", correctAudio: "correct_orange.mp3", incorrectAudio: "wrong_orange.mp3" },
+    { question: "Which color is yellow?", answer: "yellow", questionAudio: "question_yellow.mp3", correctAudio: "correct_yellow.mp3", incorrectAudio: "wrong_yellow.mp3" },
+    { question: "Which color is green?", answer: "green", questionAudio: "question_green.mp3", correctAudio: "correct_green.mp3", incorrectAudio: "wrong_green.mp3" },
+    { question: "Which color is blue?", answer: "blue", questionAudio: "question_blue.mp3", correctAudio: "correct_blue.mp3", incorrectAudio: "wrong_blue.mp3" },
+    { question: "Which color is purple?", answer: "purple", questionAudio: "question_purple.mp3", correctAudio: "correct_purple.mp3", incorrectAudio: "wrong_purple.mp3" }
   ];
 
   let currentQuestion = 0;
+  let gameActive = true;  // To disable input during feedback
+
+  // Function to shuffle the questions array
+  function shuffleQuestions() {
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+  }
 
   function updateSelection() {
     colorBoxes.forEach(box => box.classList.remove('highlight'));
     colorBoxes[selectedIndex].classList.add('highlight');
   }
 
-  function handleSelection() {
-    const selectedColor = colorBoxes[selectedIndex].id;
+  function playAudio(audioElement, src) {
+    audioElement.src = src;
+    audioElement.play();
+  }
+
+  function handleSelection(selectedColor) {
+    if (!gameActive) return;  // Ignore input if the game is in transition
     const correctColor = questions[currentQuestion].answer;
 
     if (selectedColor === correctColor) {
-      correctAudio.play();
+      playAudio(responseAudio, questions[currentQuestion].correctAudio);  // Play correct answer phrase
       showCorrectAnswerTransition();
     } else {
-      incorrectAudio.play();
-      alert('Incorrect! Try again.');
+      playAudio(responseAudio, questions[currentQuestion].incorrectAudio);  // Play wrong answer phrase
+      showWrongAnswerTransition();
     }
   }
 
-  function showCorrectAnswerTransition() {
-    // Animate the correct color and fade to the next question
-    questionElement.classList.add('fade-out');
-    colorBoxes[selectedIndex].classList.add('highlight');
+  // Show animation for wrong answer
+  function showWrongAnswerTransition() {
+    gameActive = false;  // Disable further interaction
+    const selectedBox = colorBoxes[selectedIndex];
+    selectedBox.classList.add('wrong');
+
     setTimeout(() => {
+      selectedBox.classList.remove('wrong');
+      gameActive = true;  // Re-enable interaction
+    }, 500);  // Duration of shake animation
+  }
+
+  function showCorrectAnswerTransition() {
+    gameActive = false;  // Disable further interaction
+    colorBoxes[selectedIndex].classList.add('correct');
+    questionElement.classList.add('fade-out');
+    
+    setTimeout(() => {
+      colorBoxes[selectedIndex].classList.remove('correct');
       questionElement.classList.remove('fade-out');
       nextQuestion();
-    }, 1000);
+    }, 1500);  // Time for animation and feedback to finish
   }
 
   function nextQuestion() {
-    // Move to the next question and fade it in
+    // Move to the next question
     currentQuestion = (currentQuestion + 1) % questions.length;
-    questionElement.textContent = questions[currentQuestion].question;
+    questionElement.textContent = questions[currentQuestion].question;  // Set new question
+    playAudio(questionAudio, questions[currentQuestion].questionAudio);  // Play question audio
     questionElement.classList.add('fade-in');
-    setTimeout(() => questionElement.classList.remove('fade-in'), 500);
+    
+    setTimeout(() => {
+      questionElement.classList.remove('fade-in');
+      gameActive = true;  // Re-enable interaction
+    }, 500);  // Time for fade-in to complete
   }
 
   document.addEventListener('keydown', function(event) {
+    if (!gameActive) return;  // Ignore input if game is in feedback mode
+    
     switch(event.code) {
       case 'F8': // Left
         selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : colorBoxes.length - 1;
@@ -152,14 +222,30 @@
         updateSelection();
         break;
       case 'F1': // Select (A button)
-        handleSelection();
+        handleSelection(colorBoxes[selectedIndex].id);
         break;
     }
   });
 
-  // Initialize with the first box highlighted
+  // Add click functionality for each color box
+  colorBoxes.forEach((box, index) => {
+    box.addEventListener('click', function() {
+      selectedIndex = index;  // Update selectedIndex to clicked color
+      updateSelection();  // Highlight the clicked color
+      handleSelection(box.id);  // Check if it's correct or wrong
+    });
+  });
+
+  // Initialize with the first box highlighted and shuffle questions
+
+
+  shuffleQuestions();
+  questionElement.textContent = questions[currentQuestion].question;  // Display the first question
+  playAudio(questionAudio, questions[currentQuestion].questionAudio);  // Play the first question audio
   updateSelection();
+
 </script>
 
 </body>
 </html>
+```
