@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,7 +166,8 @@
       playAudio(responseAudio, questions[currentQuestion].correctAudio);  // Play correct answer phrase
       showCorrectAnswerTransition();
     } else {
-      playAudio(responseAudio, questions[currentQuestion].incorrectAudio);  // Play wrong answer phrase
+      playAudio(responseAudio, questions[currentQuestion].incorrectAudio);  // Play wrong answer phrase with correct color
+      responseAudio.src = `No, that's ${correctColor}.`;  // Update audio source to say the correct answer
       showWrongAnswerTransition();
     }
   }
@@ -236,9 +236,100 @@
     });
   });
 
+  // Add click functionality for each color box
+  colorBoxes.forEach((box, index) => {
+    box.addEventListener('click', function() {
+      selectedIndex = index;  // Update selectedIndex to clicked color
+      updateSelection();  // Highlight the clicked color
+      handleSelection(box.id);  // Check if it's correct or wrong
+    });
+  });
+
+  // Function to play "No, that's [wrong answer]" audio
+  function playWrongAnswerAudio(selectedColor) {
+    const wrongAnswerPhrase = `wrong_${selectedColor}.mp3`; // Construct file path for wrong answer
+    playAudio(responseAudio, wrongAnswerPhrase);  // Play wrong answer audio
+  }
+
+  // Function to replay the current question audio
+  function replayQuestionAudio() {
+    playAudio(questionAudio, questions[currentQuestion].questionAudio);  // Replay current question audio
+  }
+
+  // Updated handleSelection to play the correct wrong answer phrase
+  function handleSelection(selectedColor) {
+    if (!gameActive) return;  // Ignore input if the game is in transition
+    const correctColor = questions[currentQuestion].answer;
+
+    if (selectedColor === correctColor) {
+      playAudio(responseAudio, questions[currentQuestion].correctAudio);  // Play correct answer phrase
+      showCorrectAnswerTransition();
+    } else {
+      playWrongAnswerAudio(selectedColor);  // Play wrong answer phrase with the selected (wrong) color
+      showWrongAnswerTransition();
+    }
+  }
+
+  // Show correct answer transition with 2-second delay before moving to next question
+  function showCorrectAnswerTransition() {
+    gameActive = false;  // Disable further interaction
+    colorBoxes[selectedIndex].classList.add('correct');
+    questionElement.classList.add('fade-out');
+    
+    setTimeout(() => {
+      colorBoxes[selectedIndex].classList.remove('correct');
+      questionElement.classList.remove('fade-out');
+      nextQuestion();  // Move to the next question after a 2-second delay
+    }, 2000);  // 2-second delay
+  }
+
+  // Show animation for wrong answer
+  function showWrongAnswerTransition() {
+    gameActive = false;  // Disable further interaction
+    const selectedBox = colorBoxes[selectedIndex];
+    selectedBox.classList.add('wrong');
+
+    setTimeout(() => {
+      selectedBox.classList.remove('wrong');
+      gameActive = true;  // Re-enable interaction
+    }, 500);  // Duration of shake animation
+  }
+
+  // Move to the next question
+  function nextQuestion() {
+    currentQuestion = (currentQuestion + 1) % questions.length;
+    questionElement.textContent = questions[currentQuestion].question;  // Set new question
+    playAudio(questionAudio, questions[currentQuestion].questionAudio);  // Play question audio
+    questionElement.classList.add('fade-in');
+    
+    setTimeout(() => {
+      questionElement.classList.remove('fade-in');
+      gameActive = true;  // Re-enable interaction
+    }, 500);  // Time for fade-in to complete
+  }
+
+  document.addEventListener('keydown', function(event) {
+    if (!gameActive) return;  // Ignore input if game is in feedback mode
+    
+    switch(event.code) {
+      case 'F8': // Left
+        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : colorBoxes.length - 1;
+        updateSelection();
+        break;
+      case 'F11': // Right
+        selectedIndex = (selectedIndex < colorBoxes.length - 1) ? selectedIndex + 1 : 0;
+        updateSelection();
+        break;
+      case 'F1': // Select (A button)
+        handleSelection(colorBoxes[selectedIndex].id);
+        break;
+      case 'F12': // Right shoulder button - Replay the current question audio
+        replayQuestionAudio();
+        break;
+    }
+  });
+
   // Initialize with the first box highlighted and shuffle questions
-
-
   shuffleQuestions();
   questionElement.textContent = questions[currentQuestion].question;  // Display the first question
   playAudio(questionAudio, questions[currentQuestion].questionAudio);  // Play the first question audio
@@ -248,4 +339,3 @@
 
 </body>
 </html>
-```
