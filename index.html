@@ -209,23 +209,6 @@
     }, 500);  // Time for fade-in to complete
   }
 
-  document.addEventListener('keydown', function(event) {
-    if (!gameActive) return;  // Ignore input if game is in feedback mode
-    
-    switch(event.code) {
-      case 'F8': // Left
-        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : colorBoxes.length - 1;
-        updateSelection();
-        break;
-      case 'F11': // Right
-        selectedIndex = (selectedIndex < colorBoxes.length - 1) ? selectedIndex + 1 : 0;
-        updateSelection();
-        break;
-      case 'F1': // Select (A button)
-        handleSelection(colorBoxes[selectedIndex].id);
-        break;
-    }
-  });
 
   // Add click functionality for each color box
   colorBoxes.forEach((box, index) => {
@@ -236,14 +219,6 @@
     });
   });
 
-  // Add click functionality for each color box
-  colorBoxes.forEach((box, index) => {
-    box.addEventListener('click', function() {
-      selectedIndex = index;  // Update selectedIndex to clicked color
-      updateSelection();  // Highlight the clicked color
-      handleSelection(box.id);  // Check if it's correct or wrong
-    });
-  });
 
   // Function to play "No, that's [wrong answer]" audio
   function playWrongAnswerAudio(selectedColor) {
@@ -323,7 +298,7 @@
       case 'F1': // Select (A button)
         handleSelection(colorBoxes[selectedIndex].id);
         break;
-      case 'F12': // Right shoulder button - Replay the current question audio
+      case 'ArrowRight': // B button - Replay the current question audio
         replayQuestionAudio();
         break;
     }
