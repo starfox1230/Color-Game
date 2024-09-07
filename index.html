@@ -310,14 +310,14 @@
 
   document.addEventListener('keydown', function(event) {
     if (!gameActive) return;  // Ignore input if game is in feedback mode
-    
+
     switch(event.code) {
       case 'F8': // Left
-        selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : colorBoxes.length - 1;
+        selectedIndex = (selectedIndex === 0) ? colorBoxes.length - 1 : selectedIndex - 1;  // Go left, wrap around if needed
         updateSelection();
         break;
       case 'F11': // Right
-        selectedIndex = (selectedIndex < colorBoxes.length - 1) ? selectedIndex + 1 : 0;
+        selectedIndex = (selectedIndex === colorBoxes.length - 1) ? 0 : selectedIndex + 1;  // Go right, wrap around if needed
         updateSelection();
         break;
       case 'F1': // Select (A button)
@@ -328,6 +328,7 @@
         break;
     }
   });
+
 
   // Initialize with the first box highlighted and shuffle questions
   shuffleQuestions();
